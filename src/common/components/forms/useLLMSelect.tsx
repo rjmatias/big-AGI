@@ -6,9 +6,10 @@ import AutoModeIcon from '@mui/icons-material/AutoMode';
 
 import type { IModelVendor } from '~/modules/llms/vendors/IModelVendor';
 import { findModelVendor } from '~/modules/llms/vendors/vendors.registry';
+import { llmsGetVendorIcon, LLMVendorIcon } from '~/modules/llms/components/LLMVendorIcon';
 
 import type { DModelDomainId } from '~/common/stores/llms/model.domains.types';
-import { DLLM, DLLMId, LLM_IF_OAI_Reasoning, LLM_IF_Outputs_Image, LLM_IF_Tools_WebSearch } from '~/common/stores/llms/llms.types';
+import { DLLM, DLLMId, LLM_IF_OAI_Reasoning, LLM_IF_Outputs_Audio, LLM_IF_Outputs_Image, LLM_IF_Tools_WebSearch } from '~/common/stores/llms/llms.types';
 import { TooltipOutlined } from '~/common/components/TooltipOutlined';
 import { getChatLLMId, llmsStoreActions } from '~/common/stores/llms/store-llms';
 import { optimaOpenModels } from '~/common/layout/optima/useOptima';
@@ -68,9 +69,10 @@ const _slotProps: SelectSlotsAndSlotProps<false>['slotProps'] = {
       //   fontSize: 'var(--joy-fontSize-lg)',
       // } as const,
 
-      // Option: clip width to 160...360px
+      // Option: clip width to 200...360px
       [`& .${optionClasses.root}`]: {
-        maxWidth: 'min(600px, calc(100dvw - 0.25rem))', // the small reduction is to avoid accidental h-scrolling because of the border
+        // NOTE: was maxWidth: 'min(600px, calc(100dvw - 0.25rem))', however llmSelect could be wider on Beam
+        maxWidth: 'calc(100dvw - 0.25rem)', // the small reduction is to avoid accidental h-scrolling because of the border
         minWidth: 200,
       } as const,
 
@@ -160,6 +162,8 @@ export function useLLMSelect(
           features += '🧠 '; // can reason
         if (llm.interfaces.includes(LLM_IF_Tools_WebSearch))
           features += '🌐 '; // can web search
+        if (llm.interfaces.includes(LLM_IF_Outputs_Audio))
+          features += '🔊 '; // can output audio
         if (llm.interfaces.includes(LLM_IF_Outputs_Image))
           features += '🖼️ '; // can draw images
       }
@@ -173,9 +177,9 @@ export function useLLMSelect(
           // sx={llm.id === llmId ? { fontWeight: 'md' } : undefined}
           label={llm.label}
         >
-          {(!noIcons && !!vendor?.Icon) && (
+          {!noIcons && (
             <ListItemDecorator>
-              {llm.userStarred ? '⭐ ' : <vendor.Icon />}
+              {llm.userStarred ? '⭐ ' : vendor?.id ? <LLMVendorIcon vendorId={vendor.id} /> : null}
             </ListItemDecorator>
           )}
           {/*<Tooltip title={llm.description}>*/}
@@ -233,7 +237,7 @@ export function useLLMSelect(
 
   // Memo the vendor icon for the chat LLM
   const chatLLMVendorIconFC = React.useMemo(() => {
-    return findModelVendor(llm?.vId)?.Icon;
+    return !llm?.vId ? undefined : llmsGetVendorIcon(llm.vId);
   }, [llm?.vId]);
 
   return [llm, llmSelectComponent, chatLLMVendorIconFC];

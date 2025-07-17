@@ -125,7 +125,7 @@ export function aixToAnthropicMessageCreate(model: AixAPI_Model, chatGenerate: A
   const validated = AnthropicWire_API_Message_Create.Request_schema.safeParse(payload);
   if (!validated.success) {
     console.error('Anthropic: invalid messageCreate payload. Error:', validated.error.message);
-    throw new Error(`Invalid sequence for Anthropic models: ${validated.error.errors?.[0]?.message || validated.error.message || validated.error}.`);
+    throw new Error(`Invalid sequence for Anthropic models: ${validated.error.issues?.[0]?.message || validated.error.message || validated.error}.`);
   }
 
   return validated.data;
@@ -189,6 +189,10 @@ function* _generateAnthropicMessagesContentBlocks({ parts, role }: AixMessages_C
           case 'text':
             yield { role: 'assistant', content: AnthropicWire_Blocks.TextBlock(part.text) };
             break;
+
+          case 'inline_audio':
+            // Anthropic does not support inline audio, if we got to this point, we should throw an error
+            throw new Error('Model-generated inline audio is not supported by Anthropic yet');
 
           case 'inline_image':
             // Example of mapping a model-generated image (even from other vendors, not just Anthropic) to a user message
